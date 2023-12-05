@@ -26,3 +26,8 @@ generated-code/
 GPATH
 GRTAGS
 GTAGS
+
+.cache
+compile_commands.json
+qemu.pid
+*.img
