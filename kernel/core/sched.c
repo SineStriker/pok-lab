@@ -49,9 +49,6 @@ extern pok_lockobj_t pok_partitions_lockobjs[];
 extern pok_thread_t pok_threads[];
 
 #if defined(POK_NEEDS_DEBUG)
-static const char *state_names[] = {
-    "stopped",      "runnable", "waiting", "lock", "waiting next activation",
-    "delayed start"};
 #endif
 
 extern pok_partition_t pok_partitions[];
@@ -265,6 +262,15 @@ uint32_t pok_elect_thread(uint8_t new_partition_id) {
     elected = new_partition->sched_func(
         new_partition->thread_index_low, new_partition->thread_index_high,
         PREV_THREAD(*new_partition), CURRENT_THREAD(*new_partition));
+    if(elected == IDLE_THREAD)
+    {
+        printf("thread: IDLE, time: %lld\n", POK_GETTICK());
+    }
+    else
+    {
+        printf("thread: %d, time: %lld\n", elected, POK_GETTICK());
+    }
+
 #ifdef POK_NEEDS_INSTRUMENTATION
     if ((elected != IDLE_THREAD) && (elected != new_partition->thread_main)) {
       pok_instrumentation_running_task(elected);
@@ -473,17 +479,17 @@ uint32_t pok_sched_part_rms(const uint32_t index_low, const uint32_t index_high,
 #ifdef POK_NEEDS_DEBUG
   if (res != IDLE_THREAD || current_thread != IDLE_THREAD) {
     if (res == IDLE_THREAD) {
-      printf("--- Scheduling processor: %hhd\n    scheduling idle thread\n\t\t",
-             current_proc);
+      //printf("--- Scheduling processor: %hhd\n    scheduling idle thread\n\t\t",
+             //current_proc);
     } else {
-      printf("--- Scheduling processor: %hhd\n    scheduling thread: %d {%lld} "
-             "--- ",
-             current_proc, res, pok_threads[res].period);
+      //printf("--- Scheduling processor: %hhd\n    scheduling thread: %d {%lld} "
+             //"--- ",
+             //current_proc, res, pok_threads[res].period);
       from = index_low;
       while (from <= index_high) {
         if (pok_threads[from].state == POK_STATE_RUNNABLE &&
             pok_threads[from].processor_affinity == current_proc) {
-          printf(" %d {%lld} ,", from, pok_threads[from].period);
+          //printf(" %d {%lld} ,", from, pok_threads[from].period);
         }
         from++;
       }
@@ -539,21 +545,21 @@ uint32_t pok_sched_part_static(const uint32_t index_low,
       (elected != IDLE_THREAD || current_thread != IDLE_THREAD)) {
     uint32_t non_ready = 0;
     if (elected == IDLE_THREAD) {
-      printf("--- Scheduling processor: %hhd\n    scheduling idle thread\n",
-             current_proc);
+      //printf("--- Scheduling processor: %hhd\n    scheduling idle thread\n",
+             //current_proc);
       non_ready = index_high - index_low;
     } else {
       uint32_t first = 1;
-      printf("--- Scheduling processor: %hhd\n    scheduling thread %d "
-             "(priority "
-             "%d)\n",
-             current_proc, elected, pok_threads[elected].priority);
+      //printf("--- Scheduling processor: %hhd\n    scheduling thread %d "
+             //"(priority "
+             //"%d)\n",
+             //current_proc, elected, pok_threads[elected].priority);
       for (uint32_t i = index_low; i < index_high; i++) {
         if (pok_threads[i].state == POK_STATE_RUNNABLE &&
             pok_threads[i].processor_affinity == current_proc) {
           if (i != elected) {
-            printf("%s %d (%d)", first ? "    other ready: " : ",", i,
-                   pok_threads[i].priority);
+            //printf("%s %d (%d)", first ? "    other ready: " : ",", i,
+                   //pok_threads[i].priority);
             first = 0;
           }
         } else {
@@ -561,21 +567,21 @@ uint32_t pok_sched_part_static(const uint32_t index_low,
         }
       }
       if (!first) {
-        printf("\n");
+        //printf("\n");
       }
     }
     if (non_ready) {
-      printf("    non-ready:");
-      uint32_t first = 1;
+      //printf("    non-ready:");
+      //uint32_t first = 1;
       for (uint32_t i = index_low; i < index_high; i++) {
         if (pok_threads[i].state != POK_STATE_RUNNABLE &&
             pok_threads[i].processor_affinity == current_proc) {
-          printf("%s %d (%d/%s)", first ? "" : ",", i, pok_threads[i].priority,
-                 state_names[pok_threads[i].state]);
-          first = 0;
+         // printf("%s %d (%d/%s)", first ? "" : ",", i, pok_threads[i].priority,
+                 //state_names[pok_threads[i].state]);
+          //first = 0;
         }
       }
-      printf("\n");
+      //printf("\n");
     }
   }
 #endif
@@ -622,52 +628,6 @@ uint32_t pok_sched_part_rr(const uint32_t index_low, const uint32_t index_high,
   }
 
 #ifdef POK_NEEDS_DEBUG
-  if (elected != current_thread &&
-      (elected != IDLE_THREAD || current_thread != IDLE_THREAD)) {
-    printf("--- scheduling partition: %d, low:%d, high:%d\n",
-           pok_current_partition, index_low, index_high);
-    uint32_t non_ready = 0;
-    if (elected == IDLE_THREAD) {
-      printf("--- Scheduling processor: %hhd\n    scheduling idle thread\n",
-             current_proc);
-      non_ready = index_high - index_low;
-    } else {
-      uint32_t first = 1;
-      printf("--- Scheduling processor: %hhd\n    scheduling thread %d "
-             "(priority "
-             "%d)\n",
-             current_proc, elected, pok_threads[elected].priority);
-      for (uint32_t i = index_low; i < index_high; i++) {
-        if (pok_threads[i].state == POK_STATE_RUNNABLE &&
-            pok_threads[i].processor_affinity == current_proc) {
-          if (i != elected) {
-            printf("%s %d (%d)", first ? "    other ready: " : ",", i,
-                   pok_threads[i].priority);
-            first = 0;
-          } else
-            printf("elected %d !!! \n", elected);
-        } else {
-          non_ready++;
-        }
-      }
-      if (!first) {
-        printf("\n");
-      }
-    }
-    if (non_ready) {
-      printf("    non-ready:");
-      uint32_t first = 1;
-      for (uint32_t i = index_low; i < index_high; i++) {
-        if (pok_threads[i].state != POK_STATE_RUNNABLE &&
-            pok_threads[i].processor_affinity == current_proc) {
-          printf("%s %d (%d/%s)", first ? "" : ",", i, pok_threads[i].priority,
-                 state_names[pok_threads[i].state]);
-          first = 0;
-        }
-      }
-      printf("\n");
-    }
-  }
 #endif
   return elected;
 }
