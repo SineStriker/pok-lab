@@ -6,16 +6,16 @@
 
 #include <core/schedvalues.h>
 
-#define POK_CONFIG_NB_LOCKOBJECTS 1
+#define POK_CONFIG_NB_LOCKOBJECTS 0
 #define POK_CONFIG_NB_PARTITIONS 2
 #define POK_CONFIG_NB_PROCESSORS 1
 #define POK_CONFIG_NB_THREADS 7
 #define POK_CONFIG_PARTITIONS_NLOCKOBJECTS                                     \
-  { 1, 0 }
+  { 0, 0 }
 #define POK_CONFIG_PARTITIONS_NTHREADS                                         \
   { 3, 2 }
 #define POK_CONFIG_PARTITIONS_SCHEDULER                                        \
-  { POK_SCHED_STATIC, POK_SCHED_RR }
+  { POK_SCHED_RR, POK_SCHED_RR }
 #define POK_CONFIG_PARTITIONS_SIZE                                             \
   { 133120, 133120 }
 #define POK_CONFIG_PROCESSOR_AFFINITY                                          \

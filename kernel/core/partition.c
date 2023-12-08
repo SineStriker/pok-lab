@@ -51,31 +51,31 @@ extern uint64_t partition_processor_affinity[];
 void pok_partition_setup_scheduler(const uint8_t pid) {
 #ifdef POK_CONFIG_PARTITIONS_SCHEDULER
   switch (((pok_sched_t[])POK_CONFIG_PARTITIONS_SCHEDULER)[pid]) {
-// #ifdef POK_NEEDS_SCHED_RMS
+#ifdef POK_NEEDS_SCHED_RMS
   case POK_SCHED_RMS:
     pok_partitions[pid].sched_func = &pok_sched_part_rms;
     break;
-// #endif
-// #ifdef POK_NEEDS_SCHED_STATIC
+#endif
+#ifdef POK_NEEDS_SCHED_STATIC
   case POK_SCHED_STATIC:
     pok_partitions[pid].sched_func = &pok_sched_part_static;
     break;
-// #endif // POK_NEEDS_SCHED_STATIC
-// #ifdef POK_NEEDS_SCHED_EDF
+#endif // POK_NEEDS_SCHED_STATIC
+#ifdef POK_NEEDS_SCHED_EDF
   case POK_SCHED_EDF:
     pok_partitions[pid].sched_func = &pok_sched_part_edf;
     break;
-// #endif // POK_NEEDS_SCHED_EDF
-// #ifdef POK_NEEDS_SCHED_WRR
+#endif // POK_NEEDS_SCHED_EDF
+#ifdef POK_NEEDS_SCHED_WRR
   case POK_SCHED_WRR:
     pok_partitions[pid].sched_func = &pok_sched_part_wrr;
     break;
-// #endif // POK_NEEDS_SCHED_WRR
-// #ifdef POK_NEEDS_SCHED_PRIO
+#endif // POK_NEEDS_SCHED_WRR
+#ifdef POK_NEEDS_SCHED_PRIO
   case POK_SCHED_PRIO:
     pok_partitions[pid].sched_func = &pok_sched_part_prio;
     break;
-//#endif // POK_NEEDS_SCHED_PRIO
+#endif // POK_NEEDS_SCHED_PRIO
 
     /*
      * Default scheduling algorithm is Round Robin.

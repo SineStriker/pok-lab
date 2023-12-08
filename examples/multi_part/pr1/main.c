@@ -19,15 +19,10 @@
 #include <libc/stdio.h>
 #include <types.h>
 
-uint8_t sid;
-
 int main() {
   uint32_t tid;
   pok_ret_t ret;
   pok_thread_attr_t tattr;
-
-  ret = pok_sem_create(&sid, 0, 50, POK_QUEUEING_DISCIPLINE_DEFAULT);
-  printf("[P1] pok_sem_create return=%d, mid=%d\n", ret, sid);
 
   tattr.priority = 40;
   tattr.entry = pinger_job;
