@@ -12,21 +12,26 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#include <core/syscall.h>
-#include <stdio.h>
+#include "activity.h"
+#include <core/partition.h>
+#include <core/thread.h>
+#include <libc/stdio.h>
+#include <types.h>
 
-#if defined(POK_CONFIG_NEEDS_FUNC_GETCHAR)
-int getChar() {
+int main() {
+  uint32_t tid;
+  int ret;
+  pok_thread_attr_t tattr;
 
-  char res = -1;
-  pok_syscall1(POK_SYSCALL_GETCHAR, (uint32_t)&res);
-  return (int)res;
+  tattr.priority = 42;
+  tattr.entry = pinger_job;
+  tattr.processor_affinity = 0;
+
+  ret = pok_thread_create(&tid, &tattr);
+  printf("[P2] thread create returns=%d\n", ret);
+
+  pok_partition_set_mode(POK_PARTITION_MODE_NORMAL);
+  pok_thread_wait_infinite();
+
+  return (1);
 }
-
-int getc() {
-    int ch;
-    while ((ch = getChar()) == -1) {
-    }
-    return ch;
-}
-#endif

@@ -62,6 +62,13 @@ static void my_fflush(struct s_file *file) {
   file->pos = 0;
 }
 
+static struct s_file* init_buffered_output(void) {
+    static struct s_file res;
+
+    res.pos = 0;
+    return &res;
+}
+
 static void my_putc(char c, struct s_file *file) {
   file->buff[file->pos++] = c;
   if (file->pos == MY_BUF_SIZE)
@@ -330,4 +337,11 @@ int printf(const char *format, ...) {
   res = vprintf(format, args);
   va_end(args);
   return res;
+}
+
+void putc(int ch) {
+    struct s_file* out = init_buffered_output();
+    union u_arg arg = {.sint = ch};
+    print_char(&arg, out, 0);
+    close_buffered_output(out);
 }

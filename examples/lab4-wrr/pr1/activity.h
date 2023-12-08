@@ -12,21 +12,10 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#include <core/syscall.h>
-#include <stdio.h>
+#ifndef __POK_USER_GENERATED_ACTIVITY_H_
+#define __POK_USER_GENERATED_ACTIVITY_H_
+void *pinger_job();
+void *pinger_job2();
+void *pinger_job3();
 
-#if defined(POK_CONFIG_NEEDS_FUNC_GETCHAR)
-int getChar() {
-
-  char res = -1;
-  pok_syscall1(POK_SYSCALL_GETCHAR, (uint32_t)&res);
-  return (int)res;
-}
-
-int getc() {
-    int ch;
-    while ((ch = getChar()) == -1) {
-    }
-    return ch;
-}
 #endif

@@ -262,6 +262,10 @@ uint32_t pok_elect_thread(uint8_t new_partition_id) {
     elected = new_partition->sched_func(
         new_partition->thread_index_low, new_partition->thread_index_high,
         PREV_THREAD(*new_partition), CURRENT_THREAD(*new_partition));
+#ifdef POK_NEEDS_PARTITION_SHOW
+    printf("partition name: %u, ", new_partition_id);
+#endif
+#ifdef POK_NEEDS_SHOW    
     if(elected == IDLE_THREAD)
     {
         printf("thread: IDLE, time: %lld\n", POK_GETTICK());
@@ -270,7 +274,7 @@ uint32_t pok_elect_thread(uint8_t new_partition_id) {
     {
         printf("thread: %d, time: %lld\n", elected, POK_GETTICK());
     }
-
+#endif
 #ifdef POK_NEEDS_INSTRUMENTATION
     if ((elected != IDLE_THREAD) && (elected != new_partition->thread_main)) {
       pok_instrumentation_running_task(elected);

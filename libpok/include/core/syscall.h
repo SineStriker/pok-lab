@@ -98,8 +98,9 @@ typedef enum {
 #endif
 
 #if POK_NEEDS_SHUTDOWN
-  POK_SYSCALL_SHUTDOWN = 707
+  POK_SYSCALL_SHUTDOWN = 707,
 #endif
+  POK_SYSCALL_TOP = 801
 
 } pok_syscall_id_t;
 

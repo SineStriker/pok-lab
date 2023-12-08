@@ -12,21 +12,33 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#include <core/syscall.h>
-#include <stdio.h>
+#include <core/semaphore.h>
+#include <core/thread.h>
+#include <libc/stdio.h>
+#include <types.h>
+#include <core/time.h>
 
-#if defined(POK_CONFIG_NEEDS_FUNC_GETCHAR)
-int getChar() {
 
-  char res = -1;
-  pok_syscall1(POK_SYSCALL_GETCHAR, (uint32_t)&res);
-  return (int)res;
+extern uint8_t sid;
+uint8_t val;
+
+void *pinger_job() {
+  pok_ret_t ret;
+  while (1) { 
+    //printf("P1T\n");
+  }
 }
 
-int getc() {
-    int ch;
-    while ((ch = getChar()) == -1) {
-    }
-    return ch;
+void *pinger_job2() {
+  pok_ret_t ret;
+  while (1) {
+    //printf("P1T2\n");
+  }
 }
-#endif
+
+void *pinger_job3() {
+  pok_ret_t ret;
+  while (1) {
+    //printf("P1T3\n");
+  }
+}

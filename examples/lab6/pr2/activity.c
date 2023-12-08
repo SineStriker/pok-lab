@@ -12,21 +12,10 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#include <core/syscall.h>
-#include <stdio.h>
-
-#if defined(POK_CONFIG_NEEDS_FUNC_GETCHAR)
-int getChar() {
-
-  char res = -1;
-  pok_syscall1(POK_SYSCALL_GETCHAR, (uint32_t)&res);
-  return (int)res;
+#include <core/thread.h>
+#include <libc/stdio.h>
+void *pinger_job() {
+  while (1) {
+    //printf("P2T1: begin of task\n");
+  }
 }
-
-int getc() {
-    int ch;
-    while ((ch = getChar()) == -1) {
-    }
-    return ch;
-}
-#endif
