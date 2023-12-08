@@ -55,6 +55,8 @@ typedef struct {
   pok_state_t state;
   uint64_t end_time;
   uint64_t wakeup_time;
+  uint64_t rr_budget;
+  uint64_t weight;
   void *entry;
   uint8_t partition;
   uint32_t sp;
@@ -67,6 +69,7 @@ typedef struct {
 
 typedef struct {
   uint8_t priority; /* Priority is from 0 to 255 */
+  uint8_t weight;
   uint8_t processor_affinity;
   void *entry; /* entrypoint of the thread  */
   uint64_t period;

@@ -12,18 +12,11 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#ifndef __POK_SCHEDVALUES_H__
-#define __POK_SCHEDVALUES_H__
-
-typedef enum {
-  POK_SCHED_FIFO = 0,
-  POK_SCHED_RR = 1,
-  POK_SCHED_GLOBAL_TIMESLICE = 2,
-  POK_SCHED_RMS = 3,
-  POK_SCHED_EDF = 4,
-  POK_SCHED_LLF = 5,
-  POK_SCHED_STATIC = 6,
-  POK_SCHED_WRR = 7,
-} pok_sched_t;
-
-#endif
+#include <core/thread.h>
+#include <libc/stdio.h>
+void *pinger_job() {
+  while (1) {
+    printf("P2T1: begin of task\n");
+    pok_thread_sleep(5000000);
+  }
+}

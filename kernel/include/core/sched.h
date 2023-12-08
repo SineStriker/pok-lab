@@ -25,6 +25,7 @@ extern uint8_t pok_current_partition;
 
 extern uint32_t current_threads[POK_CONFIG_NB_PROCESSORS];
 #define POK_SCHED_CURRENT_THREAD current_threads[pok_get_proc_id()]
+#define POK_LAB_SCHED_RR_BUDGET 1
 
 typedef enum {
   POK_STATE_STOPPED = 0,
@@ -60,7 +61,15 @@ uint32_t pok_sched_part_rms(const uint32_t, const uint32_t,
 uint32_t pok_sched_part_static(const uint32_t, const uint32_t,
                                const uint32_t prev_thread,
                                const uint32_t current_thread);
-
+uint32_t pok_sched_part_edf(const uint32_t, const uint32_t,
+                               const uint32_t prev_thread,
+                               const uint32_t current_thread);
+uint32_t pok_sched_part_rr1(const uint32_t, const uint32_t,
+                           const uint32_t prev_thread,
+                           const uint32_t current_thread);
+uint32_t pok_sched_part_wrr(const uint32_t, const uint32_t,
+                           const uint32_t prev_thread,
+                           const uint32_t current_thread);
 /* Context switch functions */
 void pok_global_sched_context_switch(const uint32_t elected_id,
                                      bool_t is_source_processor);

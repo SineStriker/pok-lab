@@ -589,6 +589,68 @@ uint32_t pok_sched_part_static(const uint32_t index_low,
 }
 #endif // POK_NEEDS_SCHED_STATIC
 
+uint32_t pok_sched_part_edf(const uint32_t index_low, const uint32_t index_high, const uint32_t prev_thread, const uint32_t current_thread) 
+{
+   uint32_t res = IDLE_THREAD;
+   uint8_t current_proc = pok_get_proc_id();
+
+
+
+   for (uint32_t i = index_low; i < index_high; i++) {
+        pok_thread_t *thread = &(pok_threads[i]);
+
+        if (thread->processor_affinity == current_proc &&
+            thread->state == POK_STATE_RUNNABLE) {
+            if (res == IDLE_THREAD || thread->deadline < pok_threads[res].deadline) {
+                res = i;
+            }
+        }
+   }
+    
+   if (res != IDLE_THREAD) {
+        assert(pok_threads[res].state == POK_STATE_RUNNABLE &&
+               pok_threads[res].processor_affinity == current_proc);
+   }
+   
+  uint32_t elected;
+  uint32_t from;
+  current_proc = pok_get_proc_id();
+
+  if (current_thread == IDLE_THREAD) {
+    elected = (prev_thread != IDLE_THREAD) ? prev_thread : index_low;
+  } else {
+    elected = current_thread;
+  }
+
+  from = elected;
+
+  if ((pok_threads[current_thread].remaining_time_capacity > 0 ||
+       pok_threads[current_thread].time_capacity == INFINITE_TIME_VALUE) &&
+      (pok_threads[current_thread].state == POK_STATE_RUNNABLE) &&
+      (pok_threads[current_thread].processor_affinity == current_proc) &&
+      current_thread != IDLE_THREAD) {
+    return current_thread;
+  }
+
+  do {
+    elected++;
+    if (elected >= index_high) {
+      elected = index_low;
+    }
+  } while ((elected != from) &&
+           ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
+            (pok_threads[elected].processor_affinity != current_proc)));
+
+  if ((elected == from) &&
+      ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
+       (pok_threads[elected].processor_affinity != current_proc))) {
+    elected = IDLE_THREAD;
+  }
+
+
+  return res;
+}
+
 uint32_t pok_sched_part_rr(const uint32_t index_low, const uint32_t index_high,
                            const uint32_t prev_thread,
                            const uint32_t current_thread) {
@@ -630,6 +692,82 @@ uint32_t pok_sched_part_rr(const uint32_t index_low, const uint32_t index_high,
 #ifdef POK_NEEDS_DEBUG
 #endif
   return elected;
+}
+
+uint32_t pok_sched_part_rr1(const uint32_t index_low, const uint32_t index_high,
+                           const uint32_t prev_thread,
+                           const uint32_t current_thread) {
+    uint32_t res;
+    uint32_t from;
+
+    if (current_thread == IDLE_THREAD) {
+        res = prev_thread;
+    } else {
+        if (pok_threads[current_thread].rr_budget > 0) {
+            pok_threads[current_thread].rr_budget--;
+        }
+        res = current_thread;
+    }
+
+    if (pok_threads[current_thread].state == POK_STATE_RUNNABLE
+        && pok_threads[current_thread].remaining_time_capacity > 0 && pok_threads[current_thread].rr_budget > 0) {
+        /* The current thread still has budget, let it run */
+        return current_thread;
+    }
+
+    from = res;
+    do {
+        res = index_low + (res - index_low + 1) % (index_high - index_low);
+    } while ((res != from) && (pok_threads[res].state != POK_STATE_RUNNABLE));
+
+    if ((res == from) && (pok_threads[res].state != POK_STATE_RUNNABLE)) {
+        res = IDLE_THREAD;
+    }
+
+    if (res != IDLE_THREAD) {
+        /* Refill RR budget for the selected thread */
+        pok_threads[res].rr_budget = POK_LAB_SCHED_RR_BUDGET;
+    }
+
+    return res;
+}
+
+uint32_t pok_sched_part_wrr(const uint32_t index_low, const uint32_t index_high,
+                           const uint32_t prev_thread,
+                           const uint32_t current_thread) {
+    uint32_t res;
+    uint32_t from;
+
+    if (current_thread == IDLE_THREAD) {
+        res = prev_thread;
+    } else {
+        if (pok_threads[current_thread].rr_budget > 0) {
+            pok_threads[current_thread].rr_budget--;
+        }
+        res = current_thread;
+    }
+
+    if (pok_threads[current_thread].state == POK_STATE_RUNNABLE
+        && pok_threads[current_thread].remaining_time_capacity > 0 && pok_threads[current_thread].rr_budget > 0) {
+        /* The current thread still has budget, let it run */
+        return current_thread;
+    }
+
+    from = res;
+    do {
+        res = index_low + (res - index_low + 1) % (index_high - index_low);
+    } while ((res != from) && (pok_threads[res].state != POK_STATE_RUNNABLE));
+
+    if ((res == from) && (pok_threads[res].state != POK_STATE_RUNNABLE)) {
+        res = IDLE_THREAD;
+    }
+
+    if (res != IDLE_THREAD) {
+        /* Refill RR budget for the selected thread */
+        pok_threads[res].rr_budget = POK_LAB_SCHED_RR_BUDGET * pok_threads[res].weight;
+    }
+
+    return res;
 }
 
 #if defined(POK_NEEDS_LOCKOBJECTS) || defined(POK_NEEDS_PORTS_QUEUEING) ||     \
