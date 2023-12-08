@@ -272,7 +272,7 @@ uint32_t pok_elect_thread(uint8_t new_partition_id) {
     }
     else
     {
-        printf("thread: %d, time: %lld\n", elected, POK_GETTICK());
+        printf("thread: %d elected, time: %lld\n", elected, POK_GETTICK());
     }
 #endif
 #ifdef POK_NEEDS_INSTRUMENTATION
@@ -772,6 +772,35 @@ uint32_t pok_sched_part_wrr(const uint32_t index_low, const uint32_t index_high,
     }
 
     return res;
+}
+
+uint32_t pok_sched_part_prio(const uint32_t index_low, const uint32_t index_high, 
+                            const uint32_t prev_thread,
+                            const uint32_t current_thread) {
+    uint32_t t, from;
+    uint32_t max_property_thread = IDLE_THREAD;
+
+    if (current_thread == IDLE_THREAD) {
+        from = t = prev_thread;
+    } else {
+        from = t = current_thread;
+    }
+
+    /*
+     * Walk through all threads of the given partition,
+     * select the one with highest priority.
+     */
+    do {
+        if (pok_threads[t].state == POK_STATE_RUNNABLE) {
+            if (max_property_thread == IDLE_THREAD || 
+                pok_threads[t].priority < pok_threads[max_property_thread].priority) {
+                max_property_thread = t;
+            }
+        }
+        t = index_low + (t - index_low + 1) % (index_high - index_low);
+    } while (t != from);
+
+    return max_property_thread;
 }
 
 #if defined(POK_NEEDS_LOCKOBJECTS) || defined(POK_NEEDS_PORTS_QUEUEING) ||     \

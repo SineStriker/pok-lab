@@ -12,7 +12,7 @@
 #define POK_CONFIG_PARTITIONS_NTHREADS                                                             \
     { 4 }
 #define POK_CONFIG_PARTITIONS_SCHEDULER                                                            \
-    { POK_SCHED_RR }
+    { POK_SCHED_PRIO }
 #define POK_CONFIG_PARTITIONS_SIZE                                                                 \
     { 133120 }
 #define POK_CONFIG_PROCESSOR_AFFINITY                                                              \
