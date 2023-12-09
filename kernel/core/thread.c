@@ -132,6 +132,7 @@ pok_ret_t pok_partition_thread_create(uint32_t *thread_id,
                                       const pok_thread_attr_t *attr,
                                       const uint8_t partition_id) {
   uint32_t stack_vaddr;
+
   /**
    * We can create a thread only if the partition is in INIT mode
    */

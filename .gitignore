@@ -31,3 +31,5 @@ GTAGS
 compile_commands.json
 qemu.pid
 *.img
+.vscode
+.clangd

@@ -20,7 +20,6 @@
 #define EOF -1
 
 int vprintf(const char *format, va_list args);
-;
 
 int printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
