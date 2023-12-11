@@ -210,9 +210,12 @@ uint32_t pok_elect_thread(uint8_t new_partition_id) {
       if ((thread->state == POK_STATE_WAIT_NEXT_ACTIVATION) &&
           (thread->next_activation <= now)) {
         assert(thread->time_capacity);
+        uint64_t activation = thread->next_activation;
+        uint64_t deadline = activation + thread->deadline;
         thread->state = POK_STATE_RUNNABLE;
         thread->remaining_time_capacity = thread->time_capacity;
-        thread->next_activation = thread->next_activation + thread->period;
+        thread->current_deadline = deadline;
+        thread->next_activation = activation + thread->period;
       }
     }
   }
@@ -593,67 +596,97 @@ uint32_t pok_sched_part_static(const uint32_t index_low,
 }
 #endif // POK_NEEDS_SCHED_STATIC
 
-uint32_t pok_sched_part_edf(const uint32_t index_low, const uint32_t index_high, const uint32_t prev_thread, const uint32_t current_thread) 
-{
-   uint32_t res = IDLE_THREAD;
-   uint8_t current_proc = pok_get_proc_id();
+uint32_t pok_sched_part_edf(const uint32_t index_low, const uint32_t index_high, 
+                                       const uint32_t prev_thread, const uint32_t current_thread) {
+    uint32_t t, from;
+    uint32_t max_property_thread = IDLE_THREAD;
 
+    if (current_thread == IDLE_THREAD) {
+        from = t = prev_thread;
+    } else {
+        from = t = current_thread;
+    }
 
-
-   for (uint32_t i = index_low; i < index_high; i++) {
-        pok_thread_t *thread = &(pok_threads[i]);
-
-        if (thread->processor_affinity == current_proc &&
-            thread->state == POK_STATE_RUNNABLE) {
-            if (res == IDLE_THREAD || thread->deadline < pok_threads[res].deadline) {
-                res = i;
+    do {
+        // 处理没有截止时间的线程
+        if (pok_threads[t].state == POK_STATE_RUNNABLE) {
+            if (pok_threads[t].deadline == 0) {
+                if (max_property_thread == IDLE_THREAD) {
+                    max_property_thread = t;
+                }
+            } else if (pok_threads[max_property_thread].deadline == 0 ||
+                       pok_threads[t].current_deadline < pok_threads[max_property_thread].current_deadline) {
+                max_property_thread = t;
             }
         }
-   }
-    
-   if (res != IDLE_THREAD) {
-        assert(pok_threads[res].state == POK_STATE_RUNNABLE &&
-               pok_threads[res].processor_affinity == current_proc);
-   }
-   
-  uint32_t elected;
-  uint32_t from;
-  current_proc = pok_get_proc_id();
+        t = index_low + (t - index_low + 1) % (index_high - index_low);
+    } while (t != from);
 
-  if (current_thread == IDLE_THREAD) {
-    elected = (prev_thread != IDLE_THREAD) ? prev_thread : index_low;
-  } else {
-    elected = current_thread;
-  }
-
-  from = elected;
-
-  if ((pok_threads[current_thread].remaining_time_capacity > 0 ||
-       pok_threads[current_thread].time_capacity == INFINITE_TIME_VALUE) &&
-      (pok_threads[current_thread].state == POK_STATE_RUNNABLE) &&
-      (pok_threads[current_thread].processor_affinity == current_proc) &&
-      current_thread != IDLE_THREAD) {
-    return current_thread;
-  }
-
-  do {
-    elected++;
-    if (elected >= index_high) {
-      elected = index_low;
-    }
-  } while ((elected != from) &&
-           ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
-            (pok_threads[elected].processor_affinity != current_proc)));
-
-  if ((elected == from) &&
-      ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
-       (pok_threads[elected].processor_affinity != current_proc))) {
-    elected = IDLE_THREAD;
-  }
-
-
-  return res;
+    return max_property_thread;
 }
+
+
+// uint32_t pok_sched_part_edf(const uint32_t index_low, const uint32_t index_high, const uint32_t prev_thread, const uint32_t current_thread) 
+// {
+//    uint32_t res = IDLE_THREAD;
+//    uint8_t current_proc = pok_get_proc_id();
+
+
+
+//    for (uint32_t i = index_low; i < index_high; i++) {
+//         pok_thread_t *thread = &(pok_threads[i]);
+
+//         if (thread->processor_affinity == current_proc &&
+//             thread->state == POK_STATE_RUNNABLE) {
+//             if (res == IDLE_THREAD || thread->deadline < pok_threads[res].deadline) {
+//                 res = i;
+//             }
+//         }
+//    }
+    
+//    if (res != IDLE_THREAD) {
+//         assert(pok_threads[res].state == POK_STATE_RUNNABLE &&
+//                pok_threads[res].processor_affinity == current_proc);
+//    }
+   
+//   uint32_t elected;
+//   uint32_t from;
+//   current_proc = pok_get_proc_id();
+
+//   if (current_thread == IDLE_THREAD) {
+//     elected = (prev_thread != IDLE_THREAD) ? prev_thread : index_low;
+//   } else {
+//     elected = current_thread;
+//   }
+
+//   from = elected;
+
+//   if ((pok_threads[current_thread].remaining_time_capacity > 0 ||
+//        pok_threads[current_thread].time_capacity == INFINITE_TIME_VALUE) &&
+//       (pok_threads[current_thread].state == POK_STATE_RUNNABLE) &&
+//       (pok_threads[current_thread].processor_affinity == current_proc) &&
+//       current_thread != IDLE_THREAD) {
+//     return current_thread;
+//   }
+
+//   do {
+//     elected++;
+//     if (elected >= index_high) {
+//       elected = index_low;
+//     }
+//   } while ((elected != from) &&
+//            ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
+//             (pok_threads[elected].processor_affinity != current_proc)));
+
+//   if ((elected == from) &&
+//       ((pok_threads[elected].state != POK_STATE_RUNNABLE) ||
+//        (pok_threads[elected].processor_affinity != current_proc))) {
+//     elected = IDLE_THREAD;
+//   }
+
+
+//   return res;
+// }
 
 uint32_t pok_sched_part_rr(const uint32_t index_low, const uint32_t index_high,
                            const uint32_t prev_thread,

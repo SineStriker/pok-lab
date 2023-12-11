@@ -12,11 +12,33 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
+#include <core/semaphore.h>
 #include <core/thread.h>
 #include <libc/stdio.h>
-void *pinger_job() {
+#include <types.h>
+#include <core/time.h>
+
+
+extern uint8_t sid;
+uint8_t val;
+
+void *prog_life_support() {
+  pok_ret_t ret;
+  while (1) { 
+    //printf("P1T\n");
+  }
+}
+
+void *prog_medical_records() {
+  pok_ret_t ret;
   while (1) {
-    printf("P2T1: begin of task\n");
-    pok_thread_sleep(500000);
+    //printf("P1T2\n");
+  }
+}
+
+void *prog_patient_monitoring() {
+  pok_ret_t ret;
+  while (1) {
+    //printf("P1T3\n");
   }
 }

@@ -12,25 +12,26 @@
  *                                      Copyright (c) 2007-2022 POK team
  */
 
-#include <core/semaphore.h>
+#include "activity.h"
+#include <core/partition.h>
 #include <core/thread.h>
 #include <libc/stdio.h>
 #include <types.h>
 
-uint8_t val;
+int main() {
+  uint32_t tid;
+  int ret;
+  pok_thread_attr_t tattr;
 
-void *pinger_job() {
-  pok_ret_t ret;
-  while (1) {
-    printf("P1T1: pok_sem_signal, ret=%d\n", ret);
-    pok_thread_sleep(200000);
-  }
-}
+  tattr.priority = 42;
+  tattr.entry = pinger_job;
+  tattr.processor_affinity = 0;
 
-void *pinger_job2() {
-  pok_ret_t ret;
-  while (1) {
-    printf("P1T2: pok_sem_wait, ret=%d\n", ret);
-    pok_thread_sleep(200000);
-  }
+  ret = pok_thread_create(&tid, &tattr);
+  printf("[P2] thread create returns=%d\n", ret);
+
+  pok_partition_set_mode(POK_PARTITION_MODE_NORMAL);
+  pok_thread_wait_infinite();
+
+  return (1);
 }
