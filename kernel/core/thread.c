@@ -132,13 +132,14 @@ pok_ret_t pok_partition_thread_create(uint32_t *thread_id,
                                       const pok_thread_attr_t *attr,
                                       const uint8_t partition_id) {
   uint32_t stack_vaddr;
+
   /**
    * We can create a thread only if the partition is in INIT mode
    */
-  if ((pok_partitions[partition_id].mode != POK_PARTITION_MODE_INIT_COLD) &&
-      (pok_partitions[partition_id].mode != POK_PARTITION_MODE_INIT_WARM)) {
+  if ((pok_partitions[partition_id].mode != POK_PARTITION_MODE_INIT_COLD)
+    && (pok_partitions[partition_id].mode != POK_PARTITION_MODE_INIT_WARM) && (!attr->dynamic)) {
     return POK_ERRNO_MODE;
-  }
+}
 
   // TODO: this looks suspicious
   uint32_t id = pok_partitions[partition_id].thread_index_low +

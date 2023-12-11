@@ -20,10 +20,13 @@
 #define EOF -1
 
 int vprintf(const char *format, va_list args);
-;
 
 int printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 int getChar();
+
+int getc();
+
+void putc(int ch);
 
 #endif /* __POK_LIBC_STDIO_H_ */
