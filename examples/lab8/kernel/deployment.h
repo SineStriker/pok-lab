@@ -2,38 +2,53 @@
 #define __POK_KERNEL_GENERATED_DEPLOYMENT_H_
 
 #include <core/schedvalues.h>
-
+#define POK_CONFIG_NB_MAX_PARTITIONS 2
 #define POK_CONFIG_NB_LOCKOBJECTS 1
-#define POK_CONFIG_NB_PARTITIONS 1
+#define POK_CONFIG_NB_PARTITIONS 2
 #define POK_CONFIG_NB_PROCESSORS 1
 #define POK_CONFIG_NB_THREADS 8
 #define POK_CONFIG_PARTITIONS_NLOCKOBJECTS                                     \
-  { 1 }
+  { 1 , 1}
 #define POK_CONFIG_PARTITIONS_NTHREADS                                         \
-  { 4 }
+  { 4 , 2}
 #define POK_CONFIG_PARTITIONS_SCHEDULER                                        \
-  { POK_SCHED_RR, POK_SCHED_RR }
+  { POK_SCHED_WRR, POK_SCHED_WRR }
 #define POK_CONFIG_PARTITIONS_SIZE                                             \
-  { 133120 }
+  { 133120, 133120 }
 #define POK_CONFIG_PROCESSOR_AFFINITY                                          \
-  { 1 }
+  { 1, 1 }
 #define POK_CONFIG_PROGRAM_NAME                                                \
-  { "pr1/pr1.elf"}
-#define POK_CONFIG_SCHEDULING_MAJOR_FRAME 53000000000
-#define POK_CONFIG_SCHEDULING_NBSLOTS 1
+  { "pr1/pr1.elf", "pr2/pr2.elf" }
+#define POK_CONFIG_SCHEDULING_MAJOR_FRAME 4000
+#define POK_CONFIG_SCHEDULING_NBSLOTS 4
 #define POK_CONFIG_SCHEDULING_SLOTS                                            \
-  { 2000000000 }
+  { 1000, 1000, 1000, 1000 }
 #define POK_CONFIG_SCHEDULING_SLOTS_ALLOCATION                                 \
-  { 0 }
+  { 0, 1, 0, 1 }
+  
+#define POK_CONFIG_DYNAMIC_PARTITION_SCHED 1
+#define POK_CONFIG_PARTITION_SCHEDULER POK_SCHED_MY_RR
+#define POK_CONFIG_PARTITION_DEADLINES                                         \
+  { 200, 600 }
+#define POK_CONFIG_PARTITION_PRIORITY                                          \
+  { 45, 5 }
+#define POK_CONFIG_PARTITION_WEIGHT                                            \
+  { 12, 12}
+#define POK_CONFIG_PARTITION_TIME_CAPACITY                                     \
+  { 200, 100}
+#define POK_CONFIG_PARTITION_PERIOD                                            \
+  { 500, 1000}
+
 
 #define POK_NEEDS_CONSOLE 1
 #define POK_NEEDS_DEBUG 1
 #define POK_NEEDS_LOCKOBJECTS 1
-#define POK_NEEDS_SCHED_EDF 1
+#define POK_NEEDS_SCHED_WRR 1
 #define POK_NEEDS_THREAD_SLEEP 1
 #define POK_NEEDS_THREAD_SUSPEND 1
 #define POK_NEEDS_TIME 1
-#define POK_NEEDS_SHOW 1
+
+
 typedef enum {
   pok_part_identifier_pr1 = 0,
   pok_part_identifier_pr2 = 1

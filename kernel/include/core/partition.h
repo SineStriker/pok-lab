@@ -120,6 +120,17 @@ typedef struct {
 
   uint32_t lock_level;
   pok_start_condition_t start_condition;
+  uint8_t priority; /* ADDED FOR PARTITION SCHEDULING： Priority is from 0 to 255 */
+  uint8_t weight; /* ADDED FOR PARTITION SCHEDULING： weight is from 0 to 255 */
+  uint8_t origin_weight; /* ADDED FOR PARTITION SCHEDULING： weight is from 0 to 255 */
+  uint64_t deadline; /* ADDED FOR PARTITION SCHEDULING：当period不是0的时候，这个是每次activation之后的deadline，如果period是0，则是真正的ns deadline */
+  uint64_t deadline_ns; /* ADDED FOR PARTITION SCHEDULING */
+  int64_t time_capacity; /* ADDED FOR PARTITION SCHEDULING */
+  int64_t remaining_time_capacity; /* ADDED FOR PARTITION SCHEDULING */
+  uint32_t next_activation; /* ADDED FOR PARTITION SCHEDULING */
+  pok_state_t state; /* ADDED FOR PARTITION SCHEDULING */
+  uint8_t prev_partition;
+
 } pok_partition_t;
 
 #define CURRENT_THREAD(partition) (partition).current_thread[pok_get_proc_id()]

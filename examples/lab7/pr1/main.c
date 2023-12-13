@@ -35,7 +35,6 @@ int main() {
   tattr.processor_affinity = 0;
   tattr.period = 1000;
   tattr.time_capacity = 1;
-  tattr.weight = 2;
   tattr.priority = 99;
   ret = pok_thread_create(&tid, &tattr);
   printf("[P1] pok_thread_create (1) return=%d\n", ret);
@@ -43,7 +42,6 @@ int main() {
   tattr.period = 800;
   tattr.time_capacity = 2;
   tattr.priority = 50;
-  tattr.weight = 2;
   tattr.entry = pinger_job2;
   ret = pok_thread_create(&tid, &tattr);
   printf("[P1] pok_thread_create (2) return=%d\n", ret);
@@ -52,7 +50,6 @@ int main() {
   tattr.time_capacity = 3;
   tattr.priority = 20;
   tattr.entry = pinger_job3;
-  tattr.weight = 2;
   ret = pok_thread_create(&tid, &tattr);
   printf("[P1] pok_thread_create (3) return=%d\n", ret);
 

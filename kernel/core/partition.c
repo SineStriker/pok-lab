@@ -246,6 +246,18 @@ pok_ret_t pok_partition_init() {
 
     pok_partitions[i].lock_level = 0;
     pok_partitions[i].start_condition = NORMAL_START;
+    
+#ifdef POK_CONFIG_DYNAMIC_PARTITION_SCHED
+    pok_partitions[i].period = (uint64_t[])POK_CONFIG_PARTITION_PERIOD[i];
+    pok_partitions[i].deadline = (uint64_t[])POK_CONFIG_PARTITION_DEADLINES[i];
+    pok_partitions[i].priority = (uint8_t[])POK_CONFIG_PARTITION_PRIORITY[i];
+    pok_partitions[i].weight = (uint8_t[])POK_CONFIG_PARTITION_WEIGHT[i];
+    pok_partitions[i].origin_weight = (uint8_t[])POK_CONFIG_PARTITION_WEIGHT[i];
+    pok_partitions[i].time_capacity = (uint64_t[])POK_CONFIG_PARTITION_TIME_CAPACITY[i];
+    pok_partitions[i].state = POK_STATE_WAIT_NEXT_ACTIVATION;
+    pok_partitions[i].next_activation = 0;
+#endif
+
 
 #ifdef POK_NEEDS_INSTRUMENTATION
     pok_instrumentation_partition_archi(i);

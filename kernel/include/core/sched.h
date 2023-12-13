@@ -33,7 +33,8 @@ typedef enum {
   POK_STATE_WAITING = 2,
   POK_STATE_LOCK = 3,
   POK_STATE_WAIT_NEXT_ACTIVATION = 4,
-  POK_STATE_DELAYED_START = 5
+  POK_STATE_DELAYED_START = 5,
+  POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING = 6
 } pok_state_t;
 
 void pok_sched_init(void); /* Initialize scheduling stuff */
@@ -76,6 +77,20 @@ void pok_global_sched_context_switch(const uint32_t elected_id,
 void pok_sched_context_switch(const uint32_t elected_id,
                               bool_t is_source_processor);
 void pok_partition_switch(void);
+uint8_t (*partition_sched_func)(
+          uint8_t prev_partition,
+          uint8_t cur_partition);
+
+
+/* 分区调度函数 */
+uint8_t pok_partition_sched_preemptive_edf(const uint8_t prev_partition,
+                                           const uint8_t current_partition);
+uint8_t pok_partition_sched_preemptive_priority(const uint8_t prev_partition,
+                                                const uint8_t current_partition);
+uint8_t pok_partition_sched_my_rr(const uint8_t prev_partition, 
+                                  const uint8_t current_partition);
+uint8_t pok_partition_sched_weighted_rr(const uint8_t prev_partition,
+                                        const uint8_t current_partition);
 
 /*
  * Functions to lock threads

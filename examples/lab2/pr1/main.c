@@ -33,15 +33,15 @@ int main() {
  
   tattr.entry = pinger_job;
   tattr.processor_affinity = 0;
-  tattr.period = 1000;
-  tattr.deadline = 1000;
+  tattr.period = 500;
+  tattr.deadline = 150;
   tattr.time_capacity = 1;
-  tattr.priority = 99;
+  tattr.priority = 1;
   ret = pok_thread_create(&tid, &tattr);
   printf("[P1] pok_thread_create (1) return=%d\n", ret);
 
   tattr.period = 800;
-  tattr.time_capacity = 2;
+  tattr.time_capacity = 5;
   tattr.priority = 50;
   tattr.deadline = 600;
   tattr.entry = pinger_job2;
@@ -49,9 +49,9 @@ int main() {
   printf("[P1] pok_thread_create (2) return=%d\n", ret);
   
   tattr.period = 1000;
-  tattr.time_capacity = 3;
+  tattr.time_capacity = 7;
   tattr.priority = 20;
-  tattr.deadline = 500;
+  tattr.deadline = 1000;
   tattr.entry = pinger_job3;
   ret = pok_thread_create(&tid, &tattr);
   printf("[P1] pok_thread_create (3) return=%d\n", ret);

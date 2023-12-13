@@ -34,6 +34,7 @@
 #define POK_NEEDS_THREAD_SUSPEND 1
 #define POK_NEEDS_TIME 1
 #define POK_NEEDS_SHOW 1
+
 typedef enum {
   pok_part_identifier_pr1 = 0,
   pok_part_identifier_pr2 = 1
