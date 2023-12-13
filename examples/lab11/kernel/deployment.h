@@ -27,13 +27,13 @@
   { 0, 1, 0, 1 }
   
 #define POK_CONFIG_DYNAMIC_PARTITION_SCHED 1
-#define POK_CONFIG_PARTITION_SCHEDULER POK_SCHED_PREEMPTIVE_PRIORITY
+#define POK_CONFIG_PARTITION_SCHEDULER POK_SCHED_WEIGHT_RR
 #define POK_CONFIG_PARTITION_DEADLINES                                         \
   { 300, 600 }
 #define POK_CONFIG_PARTITION_PRIORITY                                          \
   { 45, 5 }
 #define POK_CONFIG_PARTITION_WEIGHT                                            \
-  { 12, 12}
+  { 4, 1}
 #define POK_CONFIG_PARTITION_TIME_CAPACITY                                     \
   { 200, 100}
 #define POK_CONFIG_PARTITION_PERIOD                                            \

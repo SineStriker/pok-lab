@@ -203,11 +203,10 @@ uint8_t pok_elect_partition() {
 #if defined(POK_CONFIG_DYNAMIC_PARTITION_SCHED)
   pok_partition_t *partition;
   int i;
+  int jg=0;
   // 遍历所有partition并且更新状态(除当前分区外)
   for (i = 0; i < POK_CONFIG_NB_MAX_PARTITIONS; i++) {
     partition = &(pok_partitions[i]);
-    printf("pa_num:%d   pa_sta:%u   ",i, partition->state);
-    printf("now:%llu, next_activation:%u\n", now, partition->next_activation);
     if (i != POK_SCHED_CURRENT_PARTITION &&
         partition->state != POK_STATE_WAIT_NEXT_ACTIVATION && 
         partition->state != POK_STATE_STOPPED &&
@@ -223,8 +222,13 @@ uint8_t pok_elect_partition() {
       partition->remaining_time_capacity = partition->time_capacity;
       partition->next_activation = partition->next_activation + partition->period;
       partition->deadline_ns = now + partition->deadline;
+      jg = 1;
     }
+    printf("pa_num:%d   pa_sta:%u,   ",i, partition->state);
+    printf("now:%llu, next_activation:%u,  ", now, partition->next_activation);
+    printf("remain_time: %llu deadline_ns: %llu\n", partition->remaining_time_capacity, partition->deadline_ns);
   }
+  
 
 
   if (POK_CURRENT_PARTITION.state == POK_STATE_RUNNABLE) {
@@ -233,7 +237,15 @@ uint8_t pok_elect_partition() {
           POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
           printf("[ELECT PART]PARTITION %d missed ddl at %lld\n", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
       }
-      POK_CURRENT_PARTITION.remaining_time_capacity = POK_CURRENT_PARTITION.remaining_time_capacity - POK_TIMER_QUANTUM;
+      if(jg == 0)
+      {
+          POK_CURRENT_PARTITION.remaining_time_capacity = POK_CURRENT_PARTITION.remaining_time_capacity - POK_TIMER_QUANTUM;
+      }
+      else
+      {
+          jg = 0;
+      }
+      //POK_CURRENT_PARTITION.remaining_time_capacity = POK_CURRENT_PARTITION.remaining_time_capacity - POK_TIMER_QUANTUM;
       if (POK_CURRENT_PARTITION.remaining_time_capacity <= 0 && POK_CURRENT_PARTITION.time_capacity > 0) 
       {
         POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
@@ -241,7 +253,7 @@ uint8_t pok_elect_partition() {
       }
     } else if (POK_CURRENT_PARTITION.time_capacity > 0) {
       POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
-      printf("[ELECT PART]PARTITION %d finished sucessfully at %lld\n", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
+      printf("[ELECT PART]PARTITION %d finished sucessfully at %lld\n  ", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
     }
   }
 
