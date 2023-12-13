@@ -85,10 +85,6 @@ static void create_task(uint64_t period, uint64_t time_capacity) {
         printf("Error: too many thread.\n");
     } else {
         printf("Unknown error occurred.\n");
-        printf("Thread %u created, period: %u, time capacity: %u.\n",
-               (unsigned)tid,
-               (unsigned)period,
-               (unsigned)time_capacity);
     }
 }
 

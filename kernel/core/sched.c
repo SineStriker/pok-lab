@@ -117,6 +117,28 @@ void pok_sched_init(void) {
   pok_sched_next_deadline = pok_sched_slots[0];
   pok_sched_next_flush = 0;
   pok_current_partition = pok_sched_slots_allocation[0];
+  
+  #ifdef POK_CONFIG_DYNAMIC_PARTITION_SCHED // 初始化分区调度函数
+  switch (((pok_sched_t)POK_CONFIG_PARTITION_SCHEDULER)) {
+    case POK_SCHED_MY_RR:
+      partition_sched_func = &pok_partition_sched_my_rr;
+      break;
+    case POK_SCHED_WEIGHT_RR:
+      partition_sched_func = &pok_partition_sched_weighted_rr;
+      break;
+    case POK_SCHED_PREEMPTIVE_PRIORITY:
+      partition_sched_func = &pok_partition_sched_preemptive_priority;
+      printf("123455666\n");
+      break;
+    case POK_SCHED_PREEMPTIVE_EDF:
+      partition_sched_func = &pok_partition_sched_preemptive_edf;
+      break;
+    default:
+      printf("partition sched func not implemented\n");
+      break;
+  }
+#endif
+
 }
 
 uint8_t pok_sched_get_priority_min(const pok_sched_t sched_type) {
@@ -178,6 +200,70 @@ uint8_t pok_elect_partition() {
     next_partition = pok_sched_slots_allocation[pok_sched_current_slot];
   }
 #endif /* POK_CONFIG_NB_PARTITIONS > 1 */
+#if defined(POK_CONFIG_DYNAMIC_PARTITION_SCHED)
+  pok_partition_t *partition;
+  int i;
+  int jg=0;
+  // 遍历所有partition并且更新状态(除当前分区外)
+  for (i = 0; i < POK_CONFIG_NB_MAX_PARTITIONS; i++) {
+    partition = &(pok_partitions[i]);
+    if (i != POK_SCHED_CURRENT_PARTITION &&
+        partition->state != POK_STATE_WAIT_NEXT_ACTIVATION && 
+        partition->state != POK_STATE_STOPPED &&
+        partition->deadline_ns < now) {
+      printf("[ELECT PART]partition %d missed DDL at %lld, waiting for next activation\n", i,POK_GETTICK());
+      partition->state = POK_STATE_WAIT_NEXT_ACTIVATION;
+    }
+
+    if ((partition->state == POK_STATE_WAIT_NEXT_ACTIVATION || partition->state == POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING) &&
+        (partition->next_activation <= now)) {
+      assert(partition->time_capacity);
+      partition->state = POK_STATE_RUNNABLE;
+      partition->remaining_time_capacity = partition->time_capacity;
+      partition->next_activation = partition->next_activation + partition->period;
+      partition->deadline_ns = now + partition->deadline;
+      jg = 1;
+    }
+    printf("pa_num:%d   pa_sta:%u,   ",i, partition->state);
+    printf("now:%llu, next_activation:%u,  ", now, partition->next_activation);
+    printf("remain_time: %llu deadline_ns: %llu\n", partition->remaining_time_capacity, partition->deadline_ns);
+  }
+  
+
+
+  if (POK_CURRENT_PARTITION.state == POK_STATE_RUNNABLE) {
+    if (POK_CURRENT_PARTITION.remaining_time_capacity > 0) {
+      if (POK_CURRENT_PARTITION.deadline_ns < now) {
+          POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
+          printf("[ELECT PART]PARTITION %d missed ddl at %lld\n", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
+      }
+      if(jg == 0)
+      {
+          POK_CURRENT_PARTITION.remaining_time_capacity = POK_CURRENT_PARTITION.remaining_time_capacity - POK_TIMER_QUANTUM;
+      }
+      else
+      {
+          jg = 0;
+      }
+      //POK_CURRENT_PARTITION.remaining_time_capacity = POK_CURRENT_PARTITION.remaining_time_capacity - POK_TIMER_QUANTUM;
+      if (POK_CURRENT_PARTITION.remaining_time_capacity <= 0 && POK_CURRENT_PARTITION.time_capacity > 0) 
+      {
+        POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
+        printf("[ELECT PART]PARTITION %d finished sucessfully at %lld\n", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
+      }
+    } else if (POK_CURRENT_PARTITION.time_capacity > 0) {
+      POK_CURRENT_PARTITION.state = POK_STATE_WAIT_NEXT_ACTIVATION;
+      printf("[ELECT PART]PARTITION %d finished sucessfully at %lld\n  ", POK_SCHED_CURRENT_PARTITION, POK_GETTICK());
+    }
+  }
+
+  next_partition = partition_sched_func(POK_CURRENT_PARTITION.prev_partition, POK_SCHED_CURRENT_PARTITION);
+  if (next_partition != POK_SCHED_CURRENT_PARTITION && pok_partitions[next_partition].state == POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING) {
+    printf("[ELECT PART]no runnable partition, select 0 as default at %lld\n", POK_GETTICK());
+  }
+  printf("next_partition: %u\n", next_partition);
+#endif
+
 
   return next_partition;
 }
@@ -835,6 +921,172 @@ uint32_t pok_sched_part_prio(const uint32_t index_low, const uint32_t index_high
 
     return max_property_thread;
 }
+
+// 分区调度函数
+#ifdef POK_CONFIG_DYNAMIC_PARTITION_SCHED
+static int gcd(int a, int b) {
+    if (a == b || a == 0 || b == 0)
+        return (a == 0) ? a : b;
+    int divide = (a > b) ? a : b;
+    int divider = (a < b) ? a : b;
+    int res = divide / divider;
+    int tail = divide % divider;
+    while(tail) {
+        divide = divider;
+        divider = tail;
+        res = divide / divider;
+        tail = divide % divider;
+    }
+    res++; // avoid unused warning
+    return divider;
+}
+
+uint8_t pok_partition_sched_preemptive_edf(const uint8_t __attribute__((unused)) prev_partition, const uint8_t __attribute__((unused)) current_partition) {
+  // uint64_t now = POK_GETTICK(); 
+  // printf("[partition sched]edf sched start, prev: %d, cur: %d, current tick %lld\n", prev_partition, current_partition, now);
+  int64_t elected = -1, index;
+  uint64_t earliest_ddl;
+  pok_partition_t *cur_part;
+
+  earliest_ddl = -1;
+  for (index = 0; index < POK_CONFIG_NB_MAX_PARTITIONS; ++index) {
+    cur_part = &pok_partitions[index];
+    if (cur_part->state != POK_STATE_RUNNABLE)
+      continue;
+    if (cur_part->deadline_ns < earliest_ddl) {
+      earliest_ddl = cur_part->deadline_ns;
+      elected = index;
+    }
+  }
+
+  if (elected == -1) {
+    // printf("no runnable partition, select 0 as default\n");
+    elected = 0;
+    pok_partitions[0].state = POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING;
+  }
+  // printf("[partition sched]edf sched end, select %d\n", elected);
+  return elected;
+}
+
+uint8_t pok_partition_sched_preemptive_priority(const uint8_t __attribute__((unused)) prev_partition, const uint8_t __attribute__((unused)) current_partition) {
+  int elected = -1;
+  uint16_t highest_priority = 0x100;
+  for (int i = 0; i < POK_CONFIG_NB_MAX_PARTITIONS; i++) {
+    if (pok_partitions[i].state == POK_STATE_RUNNABLE && pok_partitions[i].priority < highest_priority && pok_partitions[i].remaining_time_capacity > 0) {
+      elected = i;
+      highest_priority = pok_partitions[i].priority;
+    }
+  }
+  if (elected == -1) {
+    // printf("no runnable partition, select 0 as default\n");
+    elected = 0;
+    pok_partitions[0].state = POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING;
+  }
+  return elected;
+}
+
+uint8_t pok_partition_sched_my_rr(const uint8_t __attribute__((unused)) prev_partition, const uint8_t current_partition) {
+  // static uint8_t last = 0;
+  uint8_t res = -1;
+  uint8_t from = current_partition;
+  uint8_t i = ((from + 1) >= POK_CONFIG_NB_MAX_PARTITIONS) ? 0 : (from + 1);
+
+  while (1) {
+    if (pok_partitions[i].state == POK_STATE_RUNNABLE && pok_partitions[i].remaining_time_capacity > 0) {
+      res = i;
+      break;
+    }
+
+    i = (i + 1 >= POK_CONFIG_NB_MAX_PARTITIONS) ? 0 : (i + 1);
+    if (i == (from + 1)%POK_CONFIG_NB_MAX_PARTITIONS) {
+      pok_partitions[0].state = POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING;
+      res = 0;
+      break;
+    }
+  }
+
+  // if (res != last) {
+    // printf("[Pok Round Robin] sched partition: %d at %lld\n", res, POK_GETTICK());
+    // last = res;
+  // }
+  return res;
+}
+
+/* Compute greatest common divisor of all threads weight */
+static int gcd_partition_weight(const uint8_t index_low, const uint8_t index_high) {
+  int res = 0;
+  uint8_t i1, i2;
+  i1 = index_low;
+  while (1) {
+    if (!res)
+      res = pok_partitions[i1].weight;
+    i2 = i1 + 1;
+    if (i2 >= index_high)
+      break;
+    res = gcd(res, pok_partitions[i2].weight);
+    i1 = i2;
+  }
+  return res;
+}
+
+/* Compute the max weight of all threads */
+static int max_partition_weight(const uint8_t index_low, const uint8_t index_high) {
+  int max_weight, current_weight;
+  max_weight = 0;
+  uint8_t i;
+  for (i = index_low; i < index_high; ++i) {
+    current_weight = pok_partitions[i].weight;
+    if (max_weight < current_weight)
+      max_weight = current_weight;
+  }
+  return max_weight;
+}
+
+uint8_t pok_partition_sched_weighted_rr(const uint8_t __attribute__((unused)) prev_partition, const uint8_t current_partition) {
+  uint8_t res;
+  uint8_t from = current_partition;
+  uint8_t index_high = POK_CONFIG_NB_MAX_PARTITIONS, index_low = 0;
+  uint8_t i = ((from + 1) >= index_high) ? (index_low) : (from + 1);
+  res = (uint8_t)-1;
+  static int current_weight = 0;
+  int gcd = gcd_partition_weight(index_low, index_high);
+  int max_weight = max_partition_weight(index_low, index_high);
+
+  int no_runnable = 1;
+  int all_checked = 0;
+  while (!all_checked || !no_runnable) {
+    if (i == index_low) {
+      current_weight -= gcd;
+      if (current_weight <= 0) {
+        current_weight = max_weight;
+      }
+    }
+    if (i == from) {
+      all_checked = 1;
+    }
+    // printf("[partition sched]partition: %d state: %d, remain: %lld, weight: %d\n", i, pok_partitions[i].state, pok_partitions[i].remaining_time_capacity, pok_partitions[i].weight);
+    if (pok_partitions[i].state == POK_STATE_RUNNABLE && pok_partitions[i].remaining_time_capacity > 0) {
+      no_runnable = 0;
+      if (pok_partitions[i].weight >= current_weight) {
+        res = i;
+        break;
+      }
+    }
+
+    i = (i + 1 >= index_high) ? index_low : (i + 1);
+  }
+
+  if (res == (uint8_t)-1) {
+    pok_partitions[0].state = POK_STATE_WAIT_NEXT_ACTIVATION_BUT_RUNNING;
+    res = 0;
+  }
+  printf("[partition sched]weighted rr sched partition: %d at %lld\n", res, POK_GETTICK());
+  return res;
+}
+#endif
+
+
+
 
 #if defined(POK_NEEDS_LOCKOBJECTS) || defined(POK_NEEDS_PORTS_QUEUEING) ||     \
     defined(POK_NEEDS_PORTS_SAMPLING)

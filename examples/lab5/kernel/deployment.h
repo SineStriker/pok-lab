@@ -10,7 +10,7 @@
 #define POK_CONFIG_PARTITIONS_NLOCKOBJECTS                                     \
   { 1 }
 #define POK_CONFIG_PARTITIONS_NTHREADS                                         \
-  { 4 }
+  { 6 }
 #define POK_CONFIG_PARTITIONS_SCHEDULER                                        \
   { POK_SCHED_WRR, POK_SCHED_RR }
 #define POK_CONFIG_PARTITIONS_SIZE                                             \
